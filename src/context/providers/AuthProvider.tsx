@@ -94,20 +94,6 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     }
   };
 
-  useEffect(() => {
-    const fn = () => {
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    };
-    fn();
-
-    return () => {
-      fn();
-    };
-  }, [children]);
-
   return (
     <AUTH.Context.Provider
       value={{

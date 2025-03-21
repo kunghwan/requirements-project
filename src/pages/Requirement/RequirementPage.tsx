@@ -21,11 +21,11 @@ const RequirementPage = () => {
         .collection(FBCollection.REQUIREMENTS)
         .where("uid", "==", user?.uid)
         .where("projectId", "==", projectId)
-        .orderBy("createdAt", "desc")
         .onSnapshot((snap) => {
           const data = snap.docs.map(
             (doc) => ({ ...doc.data(), id: doc.id } as RProps)
           );
+
           // const sort = () => {
           //   return data.sort((a, b) => {
           //     if (a.createdAt === b.createdAt) {
@@ -85,7 +85,7 @@ const RequirementPage = () => {
           onCancel={addHandler}
         />
       ) : (
-        <button className="button my-5" onClick={addHandler}>
+        <button className="button mt-5" onClick={addHandler}>
           요구사항 추가
         </button>
       )}

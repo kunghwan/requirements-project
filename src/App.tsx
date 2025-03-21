@@ -17,19 +17,19 @@ const App = () => {
           path="*"
           element={
             <NotFound
-              message="접근할수 없는 페이지"
+              message="접근할 수 없는 페이지입니다."
               to={user ? "/project" : "/"}
             />
           }
         />
         <Route path="/" Component={Layout}>
-          <Route index element={<Home />} />
-          {!user && <Route path="signin" element={<AuthPage />} />}
+          <Route index Component={Home} />
+          {!user && <Route path="signin" Component={AuthPage} />}
           <Route path="project">
             <Route index Component={Project} />
             <Route path=":projectId">
-              <Route index element={<RequirementPage />} />
-              <Route path=":rid" element={<RDetailPage />} />
+              <Route index Component={RequirementPage} />
+              <Route path=":rid" Component={RDetailPage} />
             </Route>
           </Route>
         </Route>

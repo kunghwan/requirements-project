@@ -9,7 +9,7 @@ interface Props {
   onCancel: () => void;
   uid: string;
   projectId: string;
-  onSubmitEditing?: () => void;
+  // onSubmitEditing?: () => void
 }
 
 const initialState: RProps = {
@@ -26,13 +26,7 @@ const initialState: RProps = {
   uid: "",
 };
 
-const RequirementForm = ({
-  onCancel,
-  payload,
-  projectId,
-  uid,
-  onSubmitEditing,
-}: Props) => {
+const RequirementForm = ({ onCancel, payload, projectId, uid }: Props) => {
   const [r, setR] = useState(payload ?? initialState);
 
   const onChangeR = (target: keyof RProps, value: any) =>
@@ -99,13 +93,18 @@ const RequirementForm = ({
       payload.progress === r.progress &&
       payload.page === r.page &&
       payload.function === r.function;
-
+    if (isPPFSame) {
+      return alert("변경사항이 없습니다.");
+    }
     let isDescSame = true;
     for (const desc of r.desc) {
       const foundDesc = payload.desc.find((item) => item === desc);
       if (!foundDesc) {
         isDescSame = false;
       }
+    }
+    if (isDescSame) {
+      return alert("상세 내용이 변경되지 않았습니다.");
     }
 
     let isManagerSame = true;
@@ -115,18 +114,14 @@ const RequirementForm = ({
         isManagerSame = false;
       }
     }
-
-    if (
-      isPPFSame &&
-      isDescSame &&
-      isManagerSame &&
-      sRef.current?.checked === r?.isSharable
-    ) {
-      return alert("변경사항이 없습니다");
+    if (isManagerSame) {
+      return alert("담당자가 변경되지 않았습니다.");
     }
 
     try {
-      await ref.doc(payload?.id).update(r);
+      await ref
+        .doc(payload?.id)
+        .update({ ...r, isSharable: sRef.current?.checked });
       alert("수정되었습니다.");
       onCancel();
     } catch (error: any) {
@@ -139,10 +134,7 @@ const RequirementForm = ({
   }, []);
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="col gap-y-2.5 my-2.5 max-w-100 mx-auto"
-    >
+    <form onSubmit={onSubmit} className="col gap-y-2.5 my-2.5">
       <div className="flex gap-x-2.5">
         <TextInput
           isSelectTag
@@ -158,7 +150,7 @@ const RequirementForm = ({
           ref={proRef}
           value={r.progress}
           placeholder="진행 상태 선택"
-          data={[progresses] as RProgress[]}
+          data={progresses}
         />
         <div className="flex-1">
           <TextInput
@@ -296,7 +288,7 @@ const RequirementForm = ({
         <label htmlFor="share" className="ti-label">
           누구나 볼 수 있도록 공유하시겠습니까?
         </label>
-        <input type="checkbox" id="share" ref={sRef} />
+        <input type="checkbox" id="share" ref={sRef} className="w-5 h-5" />
       </div>
 
       <div className="flex gap-x-2.5 mt-2.5">

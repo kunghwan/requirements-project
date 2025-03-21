@@ -13,7 +13,7 @@
   }
 
   .button.cancel {
-    @apply bg-lightgray text-inherit;
+    @apply bg-lightgray text-black;
   }
 
   .col {
