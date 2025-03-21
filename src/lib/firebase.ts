@@ -18,3 +18,9 @@ const db = firebase.firestore();
 const authService = firebase.auth();
 
 export { db, authService, firebase };
+
+export enum FBCollection {
+  USERS = "users",
+  PROJECTS = "projects",
+  REQUIREMENTS = "requirements",
+}

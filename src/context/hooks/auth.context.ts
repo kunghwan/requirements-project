@@ -9,7 +9,9 @@ export interface Props {
   initialized: boolean;
 
   signup: (newUser: NewUser) => PromiseResult;
+
   signin: (email: string, password: string) => PromiseResult;
+
   signout: () => PromiseResult;
 }
 
