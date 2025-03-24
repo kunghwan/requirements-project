@@ -1,15 +1,25 @@
-import React, { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import TextInput from "../../components/ui/TextInput";
 import { db, FBCollection } from "../../lib/firebase";
 import { progresses } from "../../lib/dummy";
+interface RProps {
+  page: string;
+  function: string;
+  desc: string[]; // Array of descriptions
+  managers: string[]; // Array of manager names
+  createdAt: number; // Timestamp
+  projectId: string;
+  progress: string; // Could be a string representing the progress
+  uid: string;
+  isSharable?: boolean; // Optional field for sharing status
+  id?: string; // Optional field for the document ID (for update operations)
+}
 
 interface Props {
   payload?: RProps;
-
   onCancel: () => void;
   uid: string;
   projectId: string;
-
   onSubmitEditing?: () => void;
 }
 
@@ -17,11 +27,8 @@ const initialState: RProps = {
   page: "",
   function: "",
   desc: [],
-
   managers: [],
-
   createdAt: new Date().getTime(),
-
   projectId: "",
   progress: "",
   uid: "",
@@ -34,10 +41,9 @@ const RequirementForm = ({
   uid,
   onSubmitEditing,
 }: Props) => {
-  const [r, setR] = useState(payload ?? initialState);
-
-  const onChangeR = (target: keyof RProps, value: any) =>
-    setR((prev) => ({ ...prev, [target]: value }));
+  const [r, setR] = useState<RProps>(payload ?? initialState);
+  const [desc, setDesc] = useState("");
+  const [manager, setManager] = useState("");
 
   const pRef = useRef<HTMLInputElement>(null);
   const fRef = useRef<HTMLInputElement>(null);
@@ -46,17 +52,59 @@ const RequirementForm = ({
   const proRef = useRef<HTMLSelectElement>(null);
   const sRef = useRef<HTMLInputElement>(null);
 
-  const [desc, setDesc] = useState("");
-  const [manager, setManager] = useState("");
-
   const [isWritingDesc, setIsWritingDesc] = useState(false);
   const [isWritingManager, setIsWritingManager] = useState(false);
 
+  const onChangeR = (target: keyof RProps, value: any) =>
+    setR((prev) => ({ ...prev, [target]: value }));
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    inputType: "desc" | "manager"
+  ) => {
+    const { key, nativeEvent } = e;
+
+    if (key === "Tab" || key === "Enter") {
+      if (!nativeEvent.isComposing) {
+        e.preventDefault(); // Prevent default behavior of tab/enter key
+        if (inputType === "desc") {
+          if (desc.length === 0) {
+            alert("상세 내용을 입력해주세요.");
+            dRef.current?.focus();
+            return;
+          }
+          if (r.desc.includes(desc)) {
+            alert("중복된 상세 내용입니다.");
+            dRef.current?.focus();
+            return;
+          }
+          onChangeR("desc", [desc, ...r.desc]);
+          setDesc(""); // Clear desc input after adding
+        } else if (inputType === "manager") {
+          if (manager.length === 0) {
+            alert("담당자 이름을 입력해주세요.");
+            mRef.current?.focus();
+            return;
+          }
+          if (r.managers.includes(manager)) {
+            alert("중복된 담당자입니다.");
+            mRef.current?.focus();
+            return;
+          }
+          onChangeR("managers", [manager, ...r.managers]);
+          setManager(""); // Clear manager input after adding
+        }
+      }
+    }
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
     if (isWritingDesc || isWritingManager) {
       return;
     }
+
     if (r.progress.length === 0) {
       alert("진행상태를 선택해주세요.");
       return proRef.current?.showPicker();
@@ -90,51 +138,27 @@ const RequirementForm = ({
         await ref.add(newR);
         alert("추가되었습니다.");
         onCancel();
-        return setR(initialState);
+        setR(initialState);
       } catch (error: any) {
-        return alert(error.message);
+        alert(error.message);
       }
-    }
-    const isPPFSame =
-      payload.progress === r.progress &&
-      payload.page === r.page &&
-      payload.function === r.function;
-    let isDescSame = true;
-    for (const desc of r.desc) {
-      const foundDesc = payload.desc.find((item) => item === desc);
-      if (!foundDesc) {
-        isDescSame = false;
+    } else {
+      const isSame = JSON.stringify(payload) === JSON.stringify(r);
+      if (isSame) {
+        alert("변경사항이 없습니다.");
+        return;
       }
-    }
 
-    let isManagerSame = true;
-    for (const manager of r.managers) {
-      const foundManager = payload.managers.find((item) => item === manager);
-      if (!foundManager) {
-        isManagerSame = false;
+      try {
+        await ref
+          .doc(payload.id)
+          .update({ ...r, isSharable: sRef.current?.checked });
+        alert("수정되었습니다.");
+        onCancel();
+        if (onSubmitEditing) onSubmitEditing();
+      } catch (error: any) {
+        alert(error.message);
       }
-    }
-
-    if (
-      isPPFSame &&
-      isDescSame &&
-      isManagerSame &&
-      payload?.isSharable === r?.isSharable
-    ) {
-      return alert("변경사항이 없습니다.");
-    }
-
-    try {
-      await ref
-        .doc(payload?.id)
-        .update({ ...r, isSharable: sRef.current?.checked });
-      alert("수정되었습니다.");
-      onCancel();
-      if (onSubmitEditing) {
-        onSubmitEditing();
-      }
-    } catch (error: any) {
-      alert(error.message);
     }
   };
 
@@ -154,10 +178,9 @@ const RequirementForm = ({
           label="진행상태"
           onChange={(progress) => {
             onChangeR("progress", progress);
-            if (progress.length === 0) {
-              return;
+            if (progress.length > 0) {
+              pRef.current?.focus();
             }
-            pRef.current?.focus();
           }}
           ref={proRef}
           value={r.progress}
@@ -197,27 +220,7 @@ const RequirementForm = ({
           ref={dRef}
           onFocus={() => setIsWritingDesc(true)}
           onBlur={() => setIsWritingDesc(false)}
-          onKeyDown={(e) => {
-            const { key, nativeEvent } = e;
-            if (key === "Tab" || key === "Enter") {
-              if (!nativeEvent.isComposing) {
-                const focus = () =>
-                  setTimeout(() => dRef.current?.focus(), 100);
-                if (desc.length === 0) {
-                  alert("상세 내용을 입력해주세요.");
-                  return focus();
-                }
-                const foundDesc = r.desc.find((item) => item === desc);
-                if (foundDesc) {
-                  alert("중복된 상세 내용입니다.");
-                  return focus();
-                }
-                onChangeR("desc", [desc, ...r.desc]);
-                setDesc("");
-                focus();
-              }
-            }
-          }}
+          onKeyDown={(e) => handleKeyDown(e, "desc")}
         />
         {r.desc.length > 0 && (
           <ul className="flex flex-wrap gap-2 mt-1.5">
@@ -253,29 +256,7 @@ const RequirementForm = ({
           ref={mRef}
           onFocus={() => setIsWritingManager(true)}
           onBlur={() => setIsWritingManager(false)}
-          onKeyDown={(e) => {
-            const { key, nativeEvent } = e;
-            if (key === "Tab" || key === "Enter") {
-              if (!nativeEvent.isComposing) {
-                const focus = () =>
-                  setTimeout(() => mRef.current?.focus(), 100);
-                if (manager.length === 0) {
-                  alert("담당자 이릅을 입력해주세요.");
-                  return focus();
-                }
-                const foundManager = r.managers.find(
-                  (item) => item === manager
-                );
-                if (foundManager) {
-                  alert("중복된 담당자입니다.");
-                  return focus();
-                }
-                onChangeR("managers", [manager, ...r.managers]);
-                setManager("");
-                focus();
-              }
-            }
-          }}
+          onKeyDown={(e) => handleKeyDown(e, "manager")}
         />
         {r.managers.length > 0 && (
           <ul className="flex flex-wrap gap-2 mt-1.5">
@@ -298,6 +279,7 @@ const RequirementForm = ({
           </ul>
         )}
       </div>
+
       <div className="flex justify-between items-center">
         <label htmlFor="share" className="text-sm text-gray-500">
           누구나 볼 수 있도록 공유하시겠습니까?

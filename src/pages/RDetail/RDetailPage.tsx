@@ -7,8 +7,8 @@ import RequirementItem from "../Requirement/RequirementItem";
 import RequirementForm from "../Requirement/RequirementForm";
 
 const RDetailPage = () => {
-  const [project, setProject] = useState<ProjectProps | null>(null);
-  const [r, setR] = useState<RProps | null>(null);
+  const [project, setProject] = useState<ProjectProps | null>(null); // Corrected line: useState hook with type annotation
+  const [r, setR] = useState<RProps | null>(null); // Corrected line: useState hook with type annotation
   const { user } = AUTH.use();
   const { rid, projectId } = useParams<{ rid: string; projectId: string }>();
 
@@ -25,8 +25,7 @@ const RDetailPage = () => {
         }
       });
 
-    subR;
-    return subR;
+    return () => subR(); // Cleanup the subscription
   }, [rid]);
 
   useEffect(() => {
@@ -41,8 +40,8 @@ const RDetailPage = () => {
           setProject(data);
         }
       });
-    subProject;
-    return subProject;
+
+    return () => subProject(); // Cleanup the subscription
   }, [projectId]);
 
   const navi = useNavigate();
@@ -77,7 +76,8 @@ const RDetailPage = () => {
           </Link>
         </div>
       </div>
-      <h1>프로젝트 제목</h1>
+      <h1>{project?.name || "프로젝트 제목"}</h1>{" "}
+      {/* Display project name if available */}
       <RequirementForm
         payload={r}
         onCancel={back}
