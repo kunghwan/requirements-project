@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { db, FBCollection } from "../../lib/firebase";
 import { AUTH } from "../../context/hooks";
@@ -16,10 +16,10 @@ const RequirementPage = () => {
 
   const { user } = AUTH.use();
   useEffect(() => {
-    if (user && projectId) {
+    if (projectId) {
       const subR = db
         .collection(FBCollection.REQUIREMENTS)
-        .where("uid", "==", user?.uid)
+
         .where("projectId", "==", projectId)
         .onSnapshot((snap) => {
           const data = snap.docs.map(
@@ -38,8 +38,6 @@ const RequirementPage = () => {
           //   });
           // };
 
-          // console.log("sorted array", sort());
-
           setRequirements(data);
         });
 
@@ -49,7 +47,7 @@ const RequirementPage = () => {
   }, [user, projectId]);
 
   useEffect(() => {
-    if (user && projectId) {
+    if (projectId) {
       const subProject = db
         .collection(FBCollection.PROJECTS)
         .doc(projectId)
@@ -76,7 +74,12 @@ const RequirementPage = () => {
       to="/project"
     />
   ) : (
-    <div className="p-5">
+    <div className="p-5 max-w-300 mx-auto">
+      <div className="mb-2.5">
+        <Link to={"/project"} className=" hover:text-theme text-gray-500 ">
+          전체 프로젝트 보기
+        </Link>
+      </div>
       <ProjectItem {...project} />
       {isAdding ? (
         <RequirementForm
@@ -85,9 +88,13 @@ const RequirementPage = () => {
           onCancel={addHandler}
         />
       ) : (
-        <button className="button mt-5" onClick={addHandler}>
-          요구사항 추가
-        </button>
+        <>
+          {user?.uid === project.uid && (
+            <button className="button mt-5" onClick={addHandler}>
+              요구사항 추가
+            </button>
+          )}
+        </>
       )}
       <ul className="col gap-y-2.5 mt-5">
         {requirements.map((r) => (

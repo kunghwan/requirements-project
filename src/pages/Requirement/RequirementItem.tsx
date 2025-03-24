@@ -6,7 +6,7 @@ import { AUTH } from "../../context/hooks";
 
 const RequirementItem = (r: RProps) => {
   const { user } = AUTH.use();
-  const { page, desc, function: f, managers, progress } = r;
+  const { page, desc, function: f, managers, progress, uid, projectId } = r;
 
   const [isHovering, setIsHovering] = useState(false);
 
@@ -14,6 +14,25 @@ const RequirementItem = (r: RProps) => {
 
   const navi = useNavigate();
 
+  const onCopyLink = async () => {
+    try {
+      const url = `${import.meta.env.VITE_WEB_URL}/project/${projectId}`;
+      await navigator.clipboard.writeText(url);
+      alert("링크가 복사되었습니다.");
+    } catch (error: any) {
+      alert(error.message);
+    }
+  };
+  const move = () => {
+    if (user?.uid !== uid) {
+      return alert("PM이 아니면 수정할 수 없습니다.");
+    }
+    navi(r.id!);
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
   return (
     <div
       className="border rounded p-2.5 border-border col relative"
@@ -29,7 +48,15 @@ const RequirementItem = (r: RProps) => {
     >
       {isHovering && (
         <div className="flex gap-x-2.5 absolute bottom-2.5 right-2.5">
-          <button className="button cancel" onClick={() => navi(r.id!)}>
+          {r.isSharable && (
+            <button
+              className="button cancel hover:text-theme"
+              onClick={onCopyLink}
+            >
+              공유
+            </button>
+          )}
+          <button className="button cancel hover:text-theme" onClick={move}>
             수정
           </button>
           <button
@@ -50,9 +77,12 @@ const RequirementItem = (r: RProps) => {
         </div>
       )}
       <div className="flex justify-between border-b border-border pb-2.5">
-        <p className="font-bold">
+        <button
+          className="font-bold flex-1 text-left cursor-pointer"
+          onClick={move}
+        >
           {page}/{f}
-        </p>
+        </button>
         {user && user.uid === r.uid ? (
           <select
             value={progress}

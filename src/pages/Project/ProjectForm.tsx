@@ -13,6 +13,7 @@ interface Props {
 
 const ProjectForm = ({ onCancel, onSubmitEditing, payload }: Props) => {
   const [name, setName] = useState(payload?.name ?? "");
+  const [isSharable, setIsSharable] = useState(payload?.isSharable ?? false);
   const nameRef = useRef<HTMLInputElement>(null);
 
   const { user } = AUTH.use();
@@ -31,13 +32,13 @@ const ProjectForm = ({ onCancel, onSubmitEditing, payload }: Props) => {
     const ref = db.collection(FBCollection.PROJECTS);
 
     if (payload) {
-      if (payload.name === name) {
+      if (payload.name === name && payload.isSharable === isSharable) {
         alert("변경사항이 없습니다.");
         return;
       }
 
       try {
-        await ref.doc(payload?.id).update({ name });
+        await ref.doc(payload?.id).update({ name, isSharable });
         alert("수정되었습니다.");
         onCancel();
         if (onSubmitEditing) {
@@ -54,6 +55,7 @@ const ProjectForm = ({ onCancel, onSubmitEditing, payload }: Props) => {
       const newProejct: ProjectProps = {
         name,
         uid: user.uid,
+        isSharable,
       };
       await ref.add(newProejct);
       alert("추가되었습니다.");
@@ -73,7 +75,7 @@ const ProjectForm = ({ onCancel, onSubmitEditing, payload }: Props) => {
   }, []);
 
   return (
-    <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center">
+    <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center z-50">
       <form
         onSubmit={onSubmit}
         className="border rounded bg-white p-5 shadow-md border-border"
@@ -86,6 +88,24 @@ const ProjectForm = ({ onCancel, onSubmitEditing, payload }: Props) => {
           value={name}
           placeholder="멋진 프로젝트 이름"
         />
+
+        <div className="mt-2.5 flex gap-x-2.5 items-center ">
+          <label
+            htmlFor="share"
+            className="text-sm text-gray-500 cursor-pointer"
+          >
+            프로젝트를 팀원들과 공유하시겠습니까?
+          </label>
+          <input
+            className="w-5 h-5"
+            type="checkbox"
+            id="share"
+            checked={isSharable}
+            onChange={(e) => {
+              setIsSharable(e.target.checked);
+            }}
+          />
+        </div>
         <div className="flex gap-x-2.5 mt-5">
           <button
             type="button"

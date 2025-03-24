@@ -4,6 +4,8 @@ interface ProjectProps {
   name: string;
   id?: string;
   uid: string;
+
+  isSharable: boolean;
 }
 
 interface RProps {
@@ -19,7 +21,7 @@ interface RProps {
 
   id?: string; //! firebase가 자동생성해주는 아이디
 
-  isSharable?: boolean;
+  isSharable: boolean;
 }
 
 type RProgress = "계획중" | "진행중" | "완료";

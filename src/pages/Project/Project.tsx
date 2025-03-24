@@ -37,12 +37,7 @@ const Project = () => {
           추가
         </button>
         {isAdding && (
-          <ProjectForm
-            onCancel={addHandler}
-            onSubmitEditing={() => {
-              // console.log("프로젝트가 추가됨");
-            }}
-          />
+          <ProjectForm onCancel={addHandler} onSubmitEditing={() => {}} />
         )}
       </div>
       <div className="max-w-300 mx-auto">

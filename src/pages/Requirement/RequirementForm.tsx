@@ -9,7 +9,8 @@ interface Props {
   onCancel: () => void;
   uid: string;
   projectId: string;
-  // onSubmitEditing?: () => void
+
+  onSubmitEditing?: () => void;
 }
 
 const initialState: RProps = {
@@ -26,7 +27,13 @@ const initialState: RProps = {
   uid: "",
 };
 
-const RequirementForm = ({ onCancel, payload, projectId, uid }: Props) => {
+const RequirementForm = ({
+  onCancel,
+  payload,
+  projectId,
+  uid,
+  onSubmitEditing,
+}: Props) => {
   const [r, setR] = useState(payload ?? initialState);
 
   const onChangeR = (target: keyof RProps, value: any) =>
@@ -78,7 +85,6 @@ const RequirementForm = ({ onCancel, payload, projectId, uid }: Props) => {
         ...r,
         uid,
         projectId,
-        isSharable: sRef.current?.checked,
       };
       try {
         await ref.add(newR);
@@ -93,18 +99,12 @@ const RequirementForm = ({ onCancel, payload, projectId, uid }: Props) => {
       payload.progress === r.progress &&
       payload.page === r.page &&
       payload.function === r.function;
-    if (isPPFSame) {
-      return alert("변경사항이 없습니다.");
-    }
     let isDescSame = true;
     for (const desc of r.desc) {
       const foundDesc = payload.desc.find((item) => item === desc);
       if (!foundDesc) {
         isDescSame = false;
       }
-    }
-    if (isDescSame) {
-      return alert("상세 내용이 변경되지 않았습니다.");
     }
 
     let isManagerSame = true;
@@ -114,8 +114,14 @@ const RequirementForm = ({ onCancel, payload, projectId, uid }: Props) => {
         isManagerSame = false;
       }
     }
-    if (isManagerSame) {
-      return alert("담당자가 변경되지 않았습니다.");
+
+    if (
+      isPPFSame &&
+      isDescSame &&
+      isManagerSame &&
+      payload?.isSharable === r?.isSharable
+    ) {
+      return alert("변경사항이 없습니다.");
     }
 
     try {
@@ -124,6 +130,9 @@ const RequirementForm = ({ onCancel, payload, projectId, uid }: Props) => {
         .update({ ...r, isSharable: sRef.current?.checked });
       alert("수정되었습니다.");
       onCancel();
+      if (onSubmitEditing) {
+        onSubmitEditing();
+      }
     } catch (error: any) {
       alert(error.message);
     }
@@ -134,7 +143,10 @@ const RequirementForm = ({ onCancel, payload, projectId, uid }: Props) => {
   }, []);
 
   return (
-    <form onSubmit={onSubmit} className="col gap-y-2.5 my-2.5">
+    <form
+      onSubmit={onSubmit}
+      className="col gap-y-2.5 my-2.5 max-w-100 mx-auto"
+    >
       <div className="flex gap-x-2.5">
         <TextInput
           isSelectTag
@@ -176,6 +188,7 @@ const RequirementForm = ({ onCancel, payload, projectId, uid }: Props) => {
           요구사항 상세 내용
         </label>
         <input
+          id="desc"
           type="text"
           className="ti-input px-1.5"
           placeholder="요구사항 상세 내용 작성 예) 홈페이지에서 향기가 나게 해주세요."
@@ -231,6 +244,7 @@ const RequirementForm = ({ onCancel, payload, projectId, uid }: Props) => {
           담당자
         </label>
         <input
+          id="manager"
           type="text"
           className="ti-input px-1.5"
           placeholder="담당자 이름을 입력해주세요."
@@ -285,10 +299,17 @@ const RequirementForm = ({ onCancel, payload, projectId, uid }: Props) => {
         )}
       </div>
       <div className="flex justify-between items-center">
-        <label htmlFor="share" className="ti-label">
+        <label htmlFor="share" className="text-sm text-gray-500">
           누구나 볼 수 있도록 공유하시겠습니까?
         </label>
-        <input type="checkbox" id="share" ref={sRef} className="w-5 h-5" />
+        <input
+          type="checkbox"
+          id="share"
+          ref={sRef}
+          className="w-5 h-5"
+          checked={r.isSharable}
+          onChange={(e) => onChangeR("isSharable", e.target.checked)}
+        />
       </div>
 
       <div className="flex gap-x-2.5 mt-2.5">
